@@ -98,8 +98,8 @@ lower = max(min(x_pos0), min(x_pos1))
 num_bins = 10 #10 is nice
 val0 = (axs1.hist(x_pos0, bins = num_bins, range =[lower, upper], color = "red"))[0]
 val1 = (axs1.hist(x_pos1, bins = num_bins, range =[lower, upper], color = "blue"))[0]
-interval0 = (axs1.hist(x_pos0, bins = num_bins, range =[lower, upper], color = "red"))[1]
-interval1 = (axs1.hist(x_pos1, bins = num_bins, range =[lower, upper], color = "blue"))[1]
+intervals = (axs1.hist(x_pos0, bins = num_bins, range =[lower, upper], color = "red"))[1]
+
 
 #ignore this plot
 
@@ -110,6 +110,8 @@ for i in range(0, len(val1)):
 axs.plot(histos)
 axs.set_ylabel("Percentage Success (%)")
 tick_locs = range(0, num_bins)
-tic
-axs.set_xticks(tick_locs)
-axs.set_box_aspect(1)
+tick_labels = []
+for i in range(0, len(intervals)-1):
+    tick_labels.append([str(intervals[i])[:4], str(intervals[i+1])[:4]])
+axs.set_xticks(tick_locs, tick_labels)
+axs.tick_params(axis='both', which='major', labelsize=8)
