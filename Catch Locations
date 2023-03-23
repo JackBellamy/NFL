@@ -1,0 +1,94 @@
+import pandas as pd
+data_plays = pd.read_csv("~/Desktop/NFL/Data/plays.csv")
+data_tracking2018 = pd.read_csv("~/Desktop/NFL/Data/tracking2018.csv")
+#%%
+import numpy as np
+
+#ONLY TAKES ARRAYS FOR ARGS 2,3,4 & STRING FOR ARG 5
+def return_vals(data, condition_name, comparison, condition_answer, return_collumn):
+    conditions = ""
+    if len(condition_name) > 1:
+        for i in range(0, len(condition_name)-1):
+            cn = condition_name[i]
+            c = comparison[i]
+            ca = condition_answer[i]
+            if type(ca) is str:
+                conditions += cn+" "+c+" "+"\""+ca+"\""+" "+"&"+" "
+            else:
+                ca = str(ca)
+                conditions += cn+" "+c+" "+ca+" "+"&"+" "
+        cn = condition_name[-1]
+        c = comparison[-1]
+        ca = condition_answer[-1]
+        conditions += cn+" "+c+" "+"\""+ca+"\""
+        conditions = str(conditions)
+    else:
+        cn = condition_name[0]
+        c = comparison[0]
+        ca = condition_answer[0]
+        conditions += cn+" "+c+" "+"\""+ca+"\""
+        conditions = str(conditions)
+    return data.query(conditions)[return_collumn]
+
+
+def return_percentage_catch(data):
+    catches = 0
+    other = 0
+    for result in data:
+        if result == "C":
+            catches += 1
+        else:
+            other += 1
+    return str(100*catches/(catches+other))[:5]
+
+#%%
+
+cn_pass = ["specialTeamsPlayType", "specialTeamsResult"]
+c_pass = ["!=", "=="]
+ca_pass = ["Extra Point", "Non-Special Teams Result"]
+
+cn_2p = ["specialTeamsPlayType", "specialTeamsResult"]
+c_2p = ["==", "=="]
+ca_2p = ["Extra Point", "Non-Special Teams Result"]
+
+
+playid_pass = return_vals(data_plays, cn_pass, c_pass, ca_pass, "playId")
+gameid_pass = return_vals(data_plays, cn_pass, c_pass, ca_pass, "gameId")
+playid_pass = np.array(playid_pass)
+gameid_pass = np.array(gameid_pass)
+
+
+ball_ypos_pass_left = []
+for i in range(0, len(playid_pass)):
+    print("datapoint",i)
+    playid = playid_pass[i]
+    gameid = gameid_pass[i]
+    cn = ["playId", "gameId", "team", "playDirection"]
+    c = ["==", "==", "==", "=="]
+    ca = [playid, gameid, "football", "left"]
+    y_pos = return_vals(data_tracking2018, cn, c, ca, "y")
+    if len(y_pos) > 0:
+        y_pos = np.array(y_pos)
+        ball_ypos_pass_left.append(y_pos[-1])
+
+ball_ypos_pass_right = []
+for i in range(0, len(playid_pass)):
+    print("datapoint",i)
+    playid = playid_pass[i]
+    gameid = gameid_pass[i]
+    cn = ["playId", "gameId", "team", "playDirection"]
+    c = ["==", "==", "==", "=="]
+    ca = [playid, gameid, "football", "right"]
+    y_pos = return_vals(data_tracking2018, cn, c, ca, "y")
+    if len(y_pos) > 0:
+        y_pos = np.array(y_pos)
+        ball_ypos_pass_right.append(y_pos[-1])
+#%%
+import matplotlib.pyplot as plt
+ball_ypos_pass = ball_ypos_pass_left + ball_ypos_pass_right
+
+fig, axs = plt.subplots(1,1,figsize=(7, 7))
+axs.hist(ball_ypos_pass, bins = 20, color = "green")
+axs.set_xlabel(r"$y$"+" position")
+axs.set_ylabel("Counts")
+axs.set_title(r"$y$"+" Location of recieved ball")
