@@ -1,0 +1,147 @@
+import pandas as pd
+data_plays = pd.read_csv("~/Desktop/NFL/Data/plays.csv")
+data_tracking2018 = pd.read_csv("~/Desktop/NFL/Data/tracking2018.csv")
+#%%
+import numpy as np
+
+#ONLY TAKES ARRAYS FOR ARGS 2,3,4 & STRING FOR ARG 5
+def return_vals(data, condition_name, comparison, condition_answer, return_collumn):
+    conditions = ""
+    if len(condition_name) > 1:
+        for i in range(0, len(condition_name)-1):
+            cn = condition_name[i]
+            c = comparison[i]
+            ca = condition_answer[i]
+            if type(ca) is str:
+                conditions += cn+" "+c+" "+"\""+ca+"\""+" "+"&"+" "
+            else:
+                ca = str(ca)
+                conditions += cn+" "+c+" "+ca+" "+"&"+" "
+        cn = condition_name[-1]
+        c = comparison[-1]
+        ca = condition_answer[-1]
+        conditions += cn+" "+c+" "+"\""+ca+"\""
+        conditions = str(conditions)
+    else:
+        cn = condition_name[0]
+        c = comparison[0]
+        ca = condition_answer[0]
+        conditions += cn+" "+c+" "+"\""+ca+"\""
+        conditions = str(conditions)
+    return data.query(conditions)[return_collumn]
+
+
+def return_percentage_catch(data):
+    catches = 0
+    other = 0
+    for result in data:
+        if result == "C":
+            catches += 1
+        else:
+            other += 1
+    return str(100*catches/(catches+other))[:5]
+
+#%%
+import statistics
+import matplotlib.pyplot as plt
+
+cn_pass = ["specialTeamsPlayType", "specialTeamsResult"]
+c_pass = ["!=", "=="]
+ca_pass = ["Extra Point", "Non-Special Teams Result"]
+
+cn_2p = ["specialTeamsPlayType", "specialTeamsResult"]
+c_2p = ["==", "=="]
+ca_2p = ["Extra Point", "Non-Special Teams Result"]
+
+pass_result_pass = return_vals(data_plays, cn_pass, c_pass, ca_pass, "passResult")
+print("Pass - Percentage Catch Success:", (return_percentage_catch(pass_result_pass))+"%")
+
+play_result_pass = return_vals(data_plays, cn_pass, c_pass, ca_pass, "playResult")
+print("Pass - Average Yards Gained:", str(statistics.mean(play_result_pass))[:5])
+
+down_pass = return_vals(data_plays, cn_pass, c_pass, ca_pass, "down")
+print("Pass - Average Down in Which Play Took Place:", str(statistics.mean(down_pass))[:5])
+
+pass_result_2p = return_vals(data_plays, cn_2p, c_2p, ca_2p, "passResult")
+print("Two Point - Percentage Catch Success:", (return_percentage_catch(pass_result_2p))+"%")
+
+fig, axs = plt.subplots(1,1,figsize=(7, 7))
+axs.hist(play_result_pass, bins = 50, color = "purple")
+axs.set_xlabel("Yards Gained/Lost")
+axs.set_ylabel("Count")
+#%%
+playid_pass = return_vals(data_plays, cn_pass, c_pass, ca_pass, "playId")
+gameid_pass = return_vals(data_plays, cn_pass, c_pass, ca_pass, "gameId")
+playid_pass = np.array(playid_pass)
+gameid_pass = np.array(gameid_pass)
+
+
+ball_xpos_pass_left = []
+ball_ypos_pass_left = []
+for i in range(0, len(playid_pass)):
+    print("datapoint",i)
+    playid = playid_pass[i]
+    gameid = gameid_pass[i]
+    cn = ["playId", "gameId", "team", "playDirection"]
+    c = ["==", "==", "==", "=="]
+    ca = [playid, gameid, "football", "left"]
+    ball_xpos_pass_left.append(return_vals(data_tracking2018, cn, c, ca, "x"))
+    ball_ypos_pass_left.append(return_vals(data_tracking2018, cn, c, ca, "y"))
+
+ball_xpos_pass_right = []
+ball_ypos_pass_right = []
+for i in range(0, len(playid_pass)):
+    print("datapoint",i)
+    playid = playid_pass[i]
+    gameid = gameid_pass[i]
+    cn = ["playId", "gameId", "team", "playDirection"]
+    c = ["==", "==", "==", "=="]
+    ca = [playid, gameid, "football", "right"]
+    ball_xpos_pass_right.append(return_vals(data_tracking2018, cn, c, ca, "x"))
+    ball_ypos_pass_right.append(return_vals(data_tracking2018, cn, c, ca, "y"))
+
+#%%
+ball_xpos_pass_left = [item for sublist in ball_xpos_pass_left for item in sublist]
+ball_ypos_pass_left = [item for sublist in ball_ypos_pass_left for item in sublist]
+ball_xpos_pass_right = [item for sublist in ball_xpos_pass_right for item in sublist]
+ball_ypos_pass_right = [item for sublist in ball_ypos_pass_right for item in sublist]
+
+#%%IF NOT RUNNING FROM SCRATCH START FROM HERE
+import matplotlib.pyplot as plt
+import numpy as np
+ball_xpos_pass_left = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/ball_xpos_pass_left.npy")
+ball_ypos_pass_left = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/ball_ypos_pass_left.npy")
+ball_xpos_pass_right = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/ball_xpos_pass_right.npy")
+ball_ypos_pass_right = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/ball_ypos_pass_right.npy")
+#%%
+import matplotlib.colors as colors
+import matplotlib as mpl
+import matplotlib.font_manager as font_manager
+plt.style.use('default')
+mpl.rcParams['font.family']='serif'
+cmfont = font_manager.FontProperties(fname=mpl.get_data_path() + '/fonts/ttf/cmr10.ttf')
+mpl.rcParams['font.serif']=cmfont.get_name()
+mpl.rcParams['mathtext.fontset']='cm'
+mpl.rcParams['axes.unicode_minus']=False
+
+
+fig, axs = plt.subplots(2,1,figsize=(15, 15))
+axs[0].hist2d(ball_xpos_pass_right, ball_ypos_pass_right, bins = 300, cmap = "gist_gray", vmax = 2)
+axs[0].set_xlim([0, 120])
+axs[0].set_ylim([0, 53.3])
+axs[0].set_facecolor('black')
+axs[0].set_box_aspect(53.3/120)
+axs[0].set_title("Ball Positions from a Pass (DOP = Right)")
+axs[0].set_xticks([])
+axs[0].set_yticks([])
+
+axs[1].hist2d(ball_xpos_pass_left, ball_ypos_pass_left, bins = 300, cmap = "gist_gray", vmax = 2)
+axs[1].set_xlim([0, 120])
+axs[1].set_ylim([0, 53.3])
+axs[1].set_facecolor('black')
+axs[1].set_box_aspect(53.3/120)
+axs[1].set_title("Ball Positions from a Pass (DOP = Left)")
+axs[1].set_xticks([])
+axs[1].set_yticks([])
+#axs.set_title("Heatmap of locations where a field goal was scored")
+
