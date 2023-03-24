@@ -1,0 +1,87 @@
+import pandas as pd
+data_plays = pd.read_csv("~/Desktop/NFL/Data/plays.csv")
+data_tracking2018 = pd.read_csv("~/Desktop/NFL/Data/tracking2018.csv")
+import matplotlib.pyplot as plt
+#%%
+import numpy as np
+
+def return_vals(data, condition_name, comparison, condition_answer, return_collumn):
+    conditions = ""
+    for i in range(0, len(condition_name)-1):
+        cn = condition_name[i]
+        c = comparison[i]
+        ca = condition_answer[i]
+        if type(ca) is str:
+            conditions += cn+" "+c+" "+"\""+ca+"\""+" "+"&"+" "
+        else:
+            ca = str(ca)
+            conditions += cn+" "+c+" "+ca+" "+"&"+" "
+    cn = condition_name[-1]
+    c = comparison[-1]
+    ca = condition_answer[-1]
+    conditions += cn+" "+c+" "+"\""+ca+"\""
+    conditions = str(conditions)
+    return data.query(conditions)[return_collumn]
+
+
+#%%
+def step1():
+    #score
+    cn1_fgs = ["specialTeamsPlayType", "specialTeamsResult"]
+    c1_fgs = ["==", "=="]
+    ca1_fgs = ["Field Goal", "Kick Attempt Good"]
+    kickerId_fgs = return_vals(data_plays, cn1_fgs, c1_fgs, ca1_fgs, 'kickerId')
+    playId_fgs = return_vals(data_plays, cn1_fgs, c1_fgs, ca1_fgs, 'playId')
+    gameId_fgs = return_vals(data_plays, cn1_fgs, c1_fgs, ca1_fgs, 'gameId')
+    
+    #miss
+    cn1_fgm = ["specialTeamsPlayType", "specialTeamsResult"]
+    c1_fgm = ["==", "=="]
+    ca1_fgm = ["Field Goal", "Kick Attempt No Good"]
+    kickerId_fgm = return_vals(data_plays, cn1_fgm, c1_fgm, ca1_fgm, 'kickerId')
+    playId_fgm = return_vals(data_plays, cn1_fgm, c1_fgm, ca1_fgm, 'playId')
+    gameId_fgm = return_vals(data_plays, cn1_fgm, c1_fgm, ca1_fgm, 'gameId')
+    return np.array(kickerId_fgs), np.array(playId_fgs), np.array(gameId_fgs), np.array(kickerId_fgm), np.array(playId_fgm), np.array(gameId_fgm)
+
+kickerId_fgs, playId_fgs, gameId_fgs, kickerId_fgm, playId_fgm, gameId_fgm = step1()
+#%%
+def step2a():
+    xpos_fgs = []
+    ypos_fgs = []
+    for i in range(0, len(playId_fgs)):
+        gameId = gameId_fgs[i]
+        playId = playId_fgs[i]
+        nflId = kickerId_fgs[i]
+        cn2_fgs = ["gameId", "playId", "nflId", "event"]
+        c2_fgs = ["==", "==", "==", "=="]
+        ca2_fgs = [gameId, playId, nflId, "field_goal_attempt"]
+        xpos_fgs.append(return_vals(data_tracking2018, cn2_fgs, c2_fgs, ca2_fgs, 'x'))
+        ypos_fgs.append(return_vals(data_tracking2018, cn2_fgs, c2_fgs, ca2_fgs, 'y'))
+    xpos_fgs = [item for sublist in xpos_fgs for item in sublist]
+    ypos_fgs = [item for sublist in ypos_fgs for item in sublist]
+    return xpos_fgs, ypos_fgs
+
+def step2b():
+    xpos_fgm = []
+    ypos_fgm = []
+    for i in range(0, len(playId_fgm)):
+        gameId = gameId_fgm[i]
+        playId = playId_fgm[i]
+        nflId = kickerId_fgm[i]
+        cn2_fgm = ["gameId", "playId", "nflId", "event"]
+        c2_fgm = ["==", "==", "==", "=="]
+        ca2_fgm = [gameId, playId, nflId, "field_goal_attempt"]
+        xpos_fgm.append(return_vals(data_tracking2018, cn2_fgm, c2_fgm, ca2_fgm, 'x'))
+        ypos_fgm.append(return_vals(data_tracking2018, cn2_fgm, c2_fgm, ca2_fgm, 'y'))
+    xpos_fgm = [item for sublist in xpos_fgm for item in sublist]
+    ypos_fgm = [item for sublist in ypos_fgm for item in sublist]
+    return xpos_fgm, ypos_fgm
+
+xpos_fgs, ypos_fgs = step2a()
+xpos_fgm, ypos_fgm = step2a()
+
+#%%
+xpos_fgs = np.array(xpos_fgs)
+ypos_fgs = np.array(ypos_fgs)
+xpos_fgm = np.array(xpos_fgm)
+ypos_fg = np.amrray(ypos_fgm)
