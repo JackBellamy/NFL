@@ -46,42 +46,80 @@ def step1():
 kickerId_fgs, playId_fgs, gameId_fgs, kickerId_fgm, playId_fgm, gameId_fgm = step1()
 #%%
 def step2a():
-    xpos_fgs = []
-    ypos_fgs = []
+    xpos_fgs_l = []
+    ypos_fgs_l = []
     for i in range(0, len(playId_fgs)):
         gameId = gameId_fgs[i]
         playId = playId_fgs[i]
         nflId = kickerId_fgs[i]
-        cn2_fgs = ["gameId", "playId", "nflId", "event"]
+        cn2_fgs = ["gameId", "playId", "nflId", "event", "playDirection"]
         c2_fgs = ["==", "==", "==", "=="]
-        ca2_fgs = [gameId, playId, nflId, "field_goal_attempt"]
-        xpos_fgs.append(return_vals(data_tracking2018, cn2_fgs, c2_fgs, ca2_fgs, 'x'))
-        ypos_fgs.append(return_vals(data_tracking2018, cn2_fgs, c2_fgs, ca2_fgs, 'y'))
-    xpos_fgs = [item for sublist in xpos_fgs for item in sublist]
-    ypos_fgs = [item for sublist in ypos_fgs for item in sublist]
-    return xpos_fgs, ypos_fgs
+        ca2_fgs = [gameId, playId, nflId, "field_goal_attempt", "left"]
+        xpos_fgs_l.append(return_vals(data_tracking2018, cn2_fgs, c2_fgs, ca2_fgs, 'x'))
+        ypos_fgs_l.append(return_vals(data_tracking2018, cn2_fgs, c2_fgs, ca2_fgs, 'y'))
+    xpos_fgs_l = [item for sublist in xpos_fgs_l for item in sublist]
+    ypos_fgs_l = [item for sublist in ypos_fgs_l for item in sublist]
+    return xpos_fgs_l, ypos_fgs_l
 
 def step2b():
-    xpos_fgm = []
-    ypos_fgm = []
+    xpos_fgm_l = []
+    ypos_fgm_l = []
     for i in range(0, len(playId_fgm)):
         gameId = gameId_fgm[i]
         playId = playId_fgm[i]
         nflId = kickerId_fgm[i]
-        cn2_fgm = ["gameId", "playId", "nflId", "event"]
+        cn2_fgm = ["gameId", "playId", "nflId", "event", "playDirection"]
         c2_fgm = ["==", "==", "==", "=="]
         ca2_fgm = [gameId, playId, nflId, "field_goal_attempt"]
-        xpos_fgm.append(return_vals(data_tracking2018, cn2_fgm, c2_fgm, ca2_fgm, 'x'))
-        ypos_fgm.append(return_vals(data_tracking2018, cn2_fgm, c2_fgm, ca2_fgm, 'y'))
-    xpos_fgm = [item for sublist in xpos_fgm for item in sublist]
-    ypos_fgm = [item for sublist in ypos_fgm for item in sublist]
-    return xpos_fgm, ypos_fgm
+        xpos_fgm_l.append(return_vals(data_tracking2018, cn2_fgm, c2_fgm, ca2_fgm, 'x'))
+        ypos_fgm_l.append(return_vals(data_tracking2018, cn2_fgm, c2_fgm, ca2_fgm, 'y'))
+    xpos_fgm_l = [item for sublist in xpos_fgm_l for item in sublist]
+    ypos_fgm_l = [item for sublist in ypos_fgm_l for item in sublist]
+    return xpos_fgm_l, ypos_fgm_l
 
-xpos_fgs, ypos_fgs = step2a()
-xpos_fgm, ypos_fgm = step2a()
+def step2c():
+    xpos_fgs_r = []
+    ypos_fgs_r = []
+    for i in range(0, len(playId_fgs)):
+        gameId = gameId_fgs[i]
+        playId = playId_fgs[i]
+        nflId = kickerId_fgs[i]
+        cn2_fgs = ["gameId", "playId", "nflId", "event", "playDirection"]
+        c2_fgs = ["==", "==", "==", "=="]
+        ca2_fgs = [gameId, playId, nflId, "field_goal_attempt", "right"]
+        xpos_fgs_r.append(return_vals(data_tracking2018, cn2_fgs, c2_fgs, ca2_fgs, 'x'))
+        ypos_fgs_r.append(return_vals(data_tracking2018, cn2_fgs, c2_fgs, ca2_fgs, 'y'))
+    xpos_fgs_r = [item for sublist in xpos_fgs_r for item in sublist]
+    ypos_fgs_r = [item for sublist in ypos_fgs_r for item in sublist]
+    return xpos_fgs_l, ypos_fgs_l
+
+def step2d():
+    xpos_fgm_r = []
+    ypos_fgm_r = []
+    for i in range(0, len(playId_fgm)):
+        gameId = gameId_fgm[i]
+        playId = playId_fgm[i]
+        nflId = kickerId_fgm[i]
+        cn2_fgm = ["gameId", "playId", "nflId", "event", "playDirection"]
+        c2_fgm = ["==", "==", "==", "=="]
+        ca2_fgm = [gameId, playId, nflId, "field_goal_attempt", "right"]
+        xpos_fgm_r.append(return_vals(data_tracking2018, cn2_fgm, c2_fgm, ca2_fgm, 'x'))
+        ypos_fgm_r.append(return_vals(data_tracking2018, cn2_fgm, c2_fgm, ca2_fgm, 'y'))
+    xpos_fgm_r = [item for sublist in xpos_fgm_r for item in sublist]
+    ypos_fgm_r = [item for sublist in ypos_fgm_r for item in sublist]
+    return xpos_fgm_l, ypos_fgm_l
+
+xpos_fgs_l, ypos_fgs_l = step2a()
+xpos_fgm_l, ypos_fgm_l = step2b()
+xpos_fgs_r, ypos_fgs_r = step2c()
+xpos_fgm_r, ypos_fgm_r = step2d()
 
 #%%
-xpos_fgs = np.array(xpos_fgs)
-ypos_fgs = np.array(ypos_fgs)
-xpos_fgm = np.array(xpos_fgm)
-ypos_fgm = np.array(ypos_fgm)
+xpos_fgs_l = np.array(xpos_fgs_l)
+ypos_fgs_l = np.array(ypos_fgs_l)
+xpos_fgm_l = np.array(xpos_fgm_l)
+ypos_fgm_l = np.array(ypos_fgm_l)
+xpos_fgs_r = np.array(xpos_fgs_r)
+ypos_fgs_r = np.array(ypos_fgs_r)
+xpos_fgm_r = np.array(xpos_fgm_r)
+ypos_fgm_r = np.array(ypos_fgm_r)
