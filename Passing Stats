@@ -1,0 +1,76 @@
+import pandas as pd
+data_plays = pd.read_csv("~/Desktop/NFL/Data/plays.csv")
+data_tracking2018 = pd.read_csv("~/Desktop/NFL/Data/tracking2018.csv")
+import matplotlib.pyplot as plt
+#%%
+import numpy as np
+
+def return_vals(data, condition_name, comparison, condition_answer, return_collumn):
+    conditions = ""
+    for i in range(0, len(condition_name)-1):
+        cn = condition_name[i]
+        c = comparison[i]
+        ca = condition_answer[i]
+        if type(ca) is str:
+            conditions += cn+" "+c+" "+"\""+ca+"\""+" "+"&"+" "
+        else:
+            ca = str(ca)
+            conditions += cn+" "+c+" "+ca+" "+"&"+" "
+    cn = condition_name[-1]
+    c = comparison[-1]
+    ca = condition_answer[-1]
+    conditions += cn+" "+c+" "+"\""+ca+"\""
+    conditions = str(conditions)
+    return data.query(conditions)[return_collumn]
+
+#%%
+def s1(outcome, return_col1, return_col2):
+    cn2 = ["specialTeamsPlayType","specialTeamsResult", "passResult"]
+    c2 = ["!=", "==", "=="]
+    ca2 = ["Extra Point","Non-Special Teams Result", outcome]
+    gameId = return_vals(data_plays, cn2, c2, ca2, return_col1)
+    playId = return_vals(data_plays, cn2, c2, ca2, return_col2)
+    return gameId, playId
+
+gameId_s, playId_s = s1("S", "gameId", "playId")
+gameId_i, playId_i = s1("I", "gameId", "playId")
+gameId_int, playId_int = s1("IN", "gameId", "playId")
+gameId_c, playId_c = s1("C", "gameId", "playId")
+
+playResult_s, penaltyYards_s = s1("S", "playResult", "penaltyYards")
+playResult_i, penaltyYards_i = s1("I", "playResult", "penaltyYards")
+playResult_int, penaltyYards_int = s1("IN", "playResult", "penaltyYards")
+playResult_c, penaltyYards_c = s1("C", "playResult", "penaltyYards")
+
+
+
+#%%
+import statistics
+catches = len(gameId_c)
+sacked = len(gameId_s)
+incomplete = len(gameId_i) + len(gameId_int)
+
+print("% Throw Release: ", str((catches+incomplete)*100/(catches+incomplete+sacked))[:6])
+print("% Catch Success After Throw: ", str((catches)*100/(catches+incomplete))[:6])
+print("% Overall Success: ", str((catches)*100/(catches+incomplete+sacked))[:6])
+
+def s2(var1, var2):
+    sum_yg = []
+    var1 = np.array(var1)
+    var2 = np.array(var2)
+    for i in range(0, len(var1)):
+        if np.isnan(var2[i]) == True:
+            sum_yg.append(var1[i])
+        else:
+            sum_yg.append(var1[i]-var2[i])
+    return sum_yg
+
+avg_yg_c = (s2(playResult_c, penaltyYards_c))
+avg_yg_s = (s2(playResult_s, penaltyYards_s))
+avg_yg_i = ( np.concatenate(( s2(playResult_i, penaltyYards_i) , s2(playResult_int, penaltyYards_int) )))
+avg_yg_total = ( np.concatenate(( s2(playResult_i, penaltyYards_i) , s2(playResult_int, penaltyYards_int) , s2(playResult_c, penaltyYards_c) , s2(playResult_s, penaltyYards_s) )))
+
+print("Average Yards Gained/Lost if Caught: ", str((sum(avg_yg_c))/len(avg_yg_c))[:6])
+print("Average Yards Gained/Lost if Sacked: ", str((sum(avg_yg_s))/len(avg_yg_s))[:6])  
+print("Average Yards Gained/Lost if Pass Incomplete: ", str((sum(avg_yg_i))/len(avg_yg_i))[:6])
+print("Average Gained/Lost All Attempts: ", str((sum(avg_yg_total))/len(avg_yg_total))[:6])   
