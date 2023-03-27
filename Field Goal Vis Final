@@ -1,0 +1,124 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+xpos_fgs_l = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/x_s_l.npy", allow_pickle=True)
+xpos_fgs_r = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/x_s_r.npy", allow_pickle=True)
+xpos_fgm_l = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/x_m_l.npy", allow_pickle=True)
+xpos_fgm_r = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/x_m_r.npy", allow_pickle=True)
+ypos_fgs_l = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/y_s_l.npy", allow_pickle=True)
+ypos_fgs_r = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/y_s_r.npy", allow_pickle=True)
+ypos_fgm_l = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/y_m_l.npy", allow_pickle=True)
+ypos_fgm_r = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/y_m_r.npy", allow_pickle=True)
+xpos_fgs_l = [item for sublist in xpos_fgs_l for item in sublist]
+xpos_fgs_r = [item for sublist in xpos_fgs_r for item in sublist]
+xpos_fgm_l = [item for sublist in xpos_fgm_l for item in sublist]
+xpos_fgm_r = [item for sublist in xpos_fgm_r for item in sublist]
+ypos_fgs_l = [item for sublist in ypos_fgs_l for item in sublist]
+ypos_fgs_r = [item for sublist in ypos_fgs_r for item in sublist]
+ypos_fgm_l = [item for sublist in ypos_fgm_l for item in sublist]
+ypos_fgm_r = [item for sublist in ypos_fgm_r for item in sublist]
+
+#%%
+def rotation(fx, fy, gx, gy):
+    for x in fx:
+        x_r = 120 - x
+        gx.append(x_r)
+    for y in fy:
+        y_r = 53.3 - y 
+        gy.append(y_r)
+    return gx, gy
+xpos_fgs, ypos_fgs = rotation(xpos_fgs_r, ypos_fgs_r, xpos_fgs_l, ypos_fgs_l)
+xpos_fgm, ypos_fgm = rotation(xpos_fgm_l, ypos_fgm_l, xpos_fgm_r, ypos_fgm_r) 
+
+#%%
+import seaborn as sns
+
+sns.kdeplot(x = xpos_fgs, y = ypos_fgs)
+plt.show()
+
+
+#%%
+fig, ax = plt.subplots(1,1,figsize=(15, 15))
+#ax.hist2d(xpos_fgs, ypos_fgs, bins = (30, 13), cmap = "cubehelix")
+#ax.hist2d(xpos_fgm, ypos_fgm, bins = (30, 13), cmap = "afmhot")
+sns.kdeplot(x = xpos_fgs, y = ypos_fgs, ax = ax, fill = True, cmap = "mako")
+sns.kdeplot(x = xpos_fgm, y = ypos_fgm, ax = ax, fill = True, cmap = "rocket")
+ax.set_xlim([0, 120])
+ax.set_ylim([0, 53.3])
+ax.set_xlim([0, 120])
+ax.set_ylim([0, 53.3])
+ax.set_facecolor('black')
+ax.set_box_aspect(53.3/120)
+ax.set_xticks([])
+ax.set_yticks([])
+
+
+
+
+def pitch():
+    width = 100
+    height = 53.3
+    color = "dimgrey"
+    rect = plt.Rectangle((0, 0), width + 20, height, ec=color, fc="None", lw=1)
+    ax.add_patch(rect)
+    for i in range(21):
+        plt.plot([10 + 5 * i, 10 + 5 * i], [0, height], c="dimgrey", lw=1)
+    for yards in range(10, width, 10):
+        yards_text = yards if yards <= width / 2 else width - yards
+        # top markers
+        plt.text(10 + yards - 2, height - 7.5, yards_text, size=15, c="darkgrey", weight="bold")
+        # botoom markers
+        plt.text(10 + yards - 2, 7.5, yards_text, size=15, c="darkgrey", weight="bold", rotation=180)
+    ###################
+    # yards markers - every yard
+    # bottom markers
+    for x in range(20):
+        for j in range(1, 5):
+            plt.plot([10 + x * 5 + j, 10 + x * 5 + j], [1, 3], color="darkgrey", lw=1)
+    
+    # top markers
+    for x in range(20):
+        for j in range(1, 5):
+            plt.plot([10 + x * 5 + j, 10 + x * 5 + j], [height - 1, height - 3], color="darkgrey", lw=1)
+    
+    # middle bottom markers
+    y = (height - 18.5) / 2
+    for x in range(20):
+        for j in range(1, 5):
+            plt.plot([10 + x * 5 + j, 10 + x * 5 + j], [y, y + 2], color="darkgrey", lw=1)
+    
+    # middle top markers
+    for x in range(20):
+        for j in range(1, 5):
+            plt.plot([10 + x * 5 + j, 10 + x * 5 + j], [height - y, height - y - 2], color="darkgrey", lw=1)
+    ###################
+    
+    # draw home end zone
+    plt.text(2.5, (height - 15) / 2, "HOME", size=30, c="darkgrey", weight="bold", rotation=90)
+    rect = plt.Rectangle((0, 0), 10, height, ec=color, fc="black", lw=2)
+    ax.add_patch(rect)
+    
+    # draw away end zone    
+    plt.text(111, (height - 15) / 2, "AWAY", size=30, c="darkgrey", weight="bold", rotation=-90)
+    rect = plt.Rectangle((width + 10, 0), 10, height, ec=color, fc="black", lw=2)
+    ax.add_patch(rect)
+    ###################
+    
+    # draw extra spot point
+    # left
+    y = (height - 3) / 2
+    plt.plot([10 + 2, 10 + 2], [y, y + 3], c="darkgrey", lw=2)
+    
+    # right
+    plt.plot([width + 10 - 2, width + 10 - 2], [y, y + 3], c="darkgrey", lw=2)
+    ###################
+    
+    # draw goalpost
+    goal_width = 6 # yards
+    y = (height - goal_width) / 2
+    # left
+    plt.plot([0, 0], [y, y + goal_width], "-", c="darkgrey", lw=10, ms=20)
+    # right
+    plt.plot([width + 20, width + 20], [y, y + goal_width], "-", c="darkgrey", lw=10, ms=20)
+
+pitch()
