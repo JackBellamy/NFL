@@ -22,7 +22,11 @@ def return_vals(data, condition_name, comparison, condition_answer, return_collu
     cn = condition_name[-1]
     c = comparison[-1]
     ca = condition_answer[-1]
-    conditions += cn+" "+c+" "+"\""+ca+"\""
+    if type(ca) is str:
+        conditions += cn+" "+c+" "+"\""+ca+"\""
+    else:
+        ca = str(ca)
+        conditions += cn+" "+c+" "+ca
     conditions = str(conditions)
     return data.query(conditions)[return_collumn]
 
@@ -76,7 +80,24 @@ def return_GPid(event, return_col1, return_col2, col2):
     x1 = [item for sublist in x1 for item in sublist]
     x2 = [item for sublist in x2 for item in sublist]
     return x1, x2
+
+#%%returns list of events during that playId and gameId
+def return_events(gameId, playId):
+    events = []
+    for i in range(0, len(gameId)):
+        print(i, "/", len(gameId))
+        cn = ["team", "gameId", "playId"]
+        c = ["==", "==", "=="]
+        ca = ["football", gameId[i], playId[i]]
+        if str(gameId_td[i])[:4] == "2018":
+            events.append(return_vals(data_tracking2018, cn, c, ca, "event"))
+        elif str(gameId_td[i])[:4] == "2019":
+            events.append(return_vals(data_tracking2019, cn, c, ca, "event"))
+        else:
+            events.append(return_vals(data_tracking2020, cn, c, ca, "event"))
+    return events
+
         
 #%%
 gameId_td, playId_td = return_GPid("touchdown", "gameId", "playId", True)
-    
+events_td = return_events(gameId_td, playId_td)
