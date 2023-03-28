@@ -44,31 +44,39 @@ def return_all_events():
 
 all_events = return_all_events()
 print(all_events)
-#%% return gameId and playId of any specific event (1 or 2)
+#%% return gameId and playId of any specific event: col2 = True (two events), else col2 = False
 def return_GPid(event, return_col1, return_col2, col2):
-    gameIds = data_plays["gameId"]
-    playIds = data_plays["playId"]
-    x = []
-    y = []
-    for i in range(0, len(gameIds)):
-        gId = gameIds[i]
-        pId = playIds[i]
-        cn = ["gameId", "playId", "event", "team"]
-        c = ["==", "==", "==", "=="]
-        ca = [gId, pId, event, "football"]
-    if str(gId)[:4] == "2018":
-        x.append(return_vals(data_tracking2018, cn, c, ca, return_col1))
-        if col2 == True:
-            y.append(return_vals(data_tracking2018, cn, c, ca, return_col2))
-    elif str(gId)[:4] == "2019" :
-        x.append(return_vals(data_tracking2019, cn, c, ca, return_col1))
-        if col2 == True:
-            y.append(return_vals(data_tracking2019, cn, c, ca, return_col2))
-    else:
-        x.append(return_vals(data_tracking2020, cn, c, ca, return_col1))
-        if col2 == True:
-            y.append(return_vals(data_tracking2020, cn, c, ca, return_col2))
-    return x,y
+    x1_2018 = []
+    x2_2018 = []
+    
+    x1_2019 = []
+    x2_2019 = []
+    
+    x1_2020 = []
+    x2_2020 = []
+    
+    cn = ["event", "team"]
+    c = ["==", "=="]
+    ca = [event, "football"]
+    
+    x1_2018.append(return_vals(data_tracking2018, cn, c, ca, return_col1))
+    if col2 == True:
+        x2_2018.append(return_vals(data_tracking2018, cn, c, ca, return_col2))
+        
+    x1_2019.append(return_vals(data_tracking2019, cn, c, ca, return_col1))
+    if col2 == True:
+        x2_2019.append(return_vals(data_tracking2019, cn, c, ca, return_col2))
+        
+    x1_2020.append(return_vals(data_tracking2020, cn, c, ca, return_col1))
+    if col2 == True:
+        x2_2020.append(return_vals(data_tracking2020, cn, c, ca, return_col2))
+        
+    x1 = x1_2018 + x1_2019 + x1_2020
+    x2 = x2_2018 + x2_2019 + x2_2020
+    x1 = [item for sublist in x1 for item in sublist]
+    x2 = [item for sublist in x2 for item in sublist]
+    return x1, x2
         
 #%%
+gameId_td, playId_td = return_GPid("touchdown", "gameId", "playId", True)
     
