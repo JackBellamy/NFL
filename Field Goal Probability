@@ -1,0 +1,91 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+xpos_fgs_l = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/x_s_l.npy", allow_pickle=True)
+xpos_fgs_r = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/x_s_r.npy", allow_pickle=True)
+xpos_fgm_l = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/x_m_l.npy", allow_pickle=True)
+xpos_fgm_r = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/x_m_r.npy", allow_pickle=True)
+ypos_fgs_l = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/y_s_l.npy", allow_pickle=True)
+ypos_fgs_r = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/y_s_r.npy", allow_pickle=True)
+ypos_fgm_l = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/y_m_l.npy", allow_pickle=True)
+ypos_fgm_r = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/y_m_r.npy", allow_pickle=True)
+xpos_fgs_l = [item for sublist in xpos_fgs_l for item in sublist]
+xpos_fgs_r = [item for sublist in xpos_fgs_r for item in sublist]
+xpos_fgm_l = [item for sublist in xpos_fgm_l for item in sublist]
+xpos_fgm_r = [item for sublist in xpos_fgm_r for item in sublist]
+ypos_fgs_l = [item for sublist in ypos_fgs_l for item in sublist]
+ypos_fgs_r = [item for sublist in ypos_fgs_r for item in sublist]
+ypos_fgm_l = [item for sublist in ypos_fgm_l for item in sublist]
+ypos_fgm_r = [item for sublist in ypos_fgm_r for item in sublist]
+
+#%%
+def rotation(fx, fy, gx, gy):
+    for x in fx:
+        x_r = 120 - x
+        gx.append(x_r)
+    for y in fy:
+        y_r = 53.3 - y 
+        gy.append(y_r)
+    return gx, gy
+xpos_fgs, ypos_fgs = rotation(xpos_fgs_r, ypos_fgs_r, xpos_fgs_l, ypos_fgs_l)
+xpos_fgm, ypos_fgm = rotation(xpos_fgm_l, ypos_fgm_l, xpos_fgm_r, ypos_fgm_r) 
+
+def rotation2(fx):
+    gx = []
+    for x in fx:
+        gx.append(120-x)
+    return gx
+
+xpos_fgm = rotation2(xpos_fgm)
+
+#%%
+
+num_bins = 100
+lb = 0
+ub = 100
+score_values, bin_s = (np.histogram(xpos_fgs, range = (lb, ub), bins=num_bins))
+miss_values, bin_m = (np.histogram(xpos_fgm, range = (lb, ub), bins=num_bins))
+
+for i in range(0, num_bins-1):
+    if miss_values[i] == 0:
+        continue
+    else:
+        lb2 = bin_s[i-1]
+        break
+
+
+for i in range(num_bins-1, 0, -1):
+    if score_values[i] == 0:
+        continue
+    else:
+        ub2 = bin_s[i+1]
+        break
+
+#%%
+
+fig, axs = plt.subplots(1,1,figsize=(12,8))
+bins = 15
+score_values2 = (np.histogram(xpos_fgs, range = (lb2, ub2), bins=bins, density = False))[0]
+miss_values2 = (np.histogram(xpos_fgm, range = (lb2, ub2), bins=bins, density = False))[0]
+percentages = []
+for i in range(0, bins):
+    sv = score_values2[i]
+    mv = miss_values2[i]
+    percentages.append((100*sv/(sv+mv)))
+x = np.linspace(lb2, ub2, bins)
+axs.plot(x, percentages, color = "black", lw = 2)
+
+axs2 = axs.twinx()
+axs.set_xlim(lb2, ub2)
+axs2.hist(xpos_fgs, range = (lb2, ub2), bins = 40, color = "lightseagreen", edgecolor = "lightseagreen", alpha = 0.4, label = "Cumulative Scored")
+axs2.hist(xpos_fgm, range = (lb2, ub2), bins = 40, color = "red", edgecolor = "red", alpha = 0.4, label = "Cumulative Missed")
+axs2.plot([1000, 10000], [100, 100], color = "black", lw = 2, label = "Percentage Success")
+#axs2.set_ylim(0, 21)
+#axs2.set_yticks(range(2, 22, 2))
+axs.set_ylim(0, 100)
+#axs.set_yticks(range(0, 110, 10))
+axs.set_ylabel("Success of Kick (%)")
+axs2.set_ylabel("Counts")
+#axs.set_xticks(np.linspace(lb2+0.5, ub2-0.5, 9))
+axs.set_xlabel("Yardage from Goal")
+axs2.legend()
