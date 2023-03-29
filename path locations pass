@@ -1,0 +1,247 @@
+import pandas as pd
+data_plays = pd.read_csv("~/Desktop/NFL/Data/plays.csv")
+data_tracking2018 = pd.read_csv("~/Desktop/NFL/Data/tracking2018.csv")
+data_tracking2019 = pd.read_csv("~/Desktop/NFL/Data/tracking2019.csv")
+data_tracking2020 = pd.read_csv("~/Desktop/NFL/Data/tracking2020.csv")
+import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+
+#sack locations in order
+#x: 47.09 R, 76.64 L
+#y: 45.52 R, 26.56 L
+#strip sack locations in order
+#x: 66.8 R
+#y: 22.85 R
+
+#%% function def
+import numpy as np
+
+def return_vals(data, condition_name, comparison, condition_answer, return_collumn):
+    conditions = ""
+    for i in range(0, len(condition_name)-1):
+        cn = condition_name[i]
+        c = comparison[i]
+        ca = condition_answer[i]
+        if type(ca) is str:
+            conditions += cn+" "+c+" "+"\""+ca+"\""+" "+"&"+" "
+        else:
+            ca = str(ca)
+            conditions += cn+" "+c+" "+ca+" "+"&"+" "
+    cn = condition_name[-1]
+    c = comparison[-1]
+    ca = condition_answer[-1]
+    conditions += cn+" "+c+" "+"\""+ca+"\""
+    conditions = str(conditions)
+    return data.query(conditions)[return_collumn]
+
+def to_list(data):
+    data2 = []
+    for i in data:
+        data2.append(i.tolist())
+    return data2
+
+def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
+    new_cmap = colors.LinearSegmentedColormap.from_list(
+        'trunc({n},{a:.2f},{b:.2f})'.format(n=cmap.name, a=minval, b=maxval),
+        cmap(np.linspace(minval, maxval, n)))
+    return new_cmap
+
+#%% return game and play ID
+def s1(return_col1, return_col2):
+    cn2 = ["specialTeamsPlayType","specialTeamsResult"]
+    c2 = ["!=", "=="]
+    ca2 = ["Extra Point","Non-Special Teams Result"]
+    gameId = np.array(return_vals(data_plays, cn2, c2, ca2, return_col1))
+    playId = np.array(return_vals(data_plays, cn2, c2, ca2, return_col2))
+    return gameId, playId
+
+gameId_all, playId_all = s1("gameId", "playId")
+
+#%% get locations of specific events(can include other events)
+def event_positions(event, direction):
+    xpos_pass = []
+    ypos_pass = []
+    for i in range(0, len(playId_all)):
+        print(event,i)
+        playId = playId_all[i]
+        gameId = gameId_all[i]
+        cn1 = ["gameId", "playId","team", "event", "playDirection"]
+        c1 = ["==", "==", "==", "==", "=="]
+        ca1 = [gameId, playId, "football", event, direction]
+        if str(gameId)[:4] == "2018" :
+            xpos = return_vals(data_tracking2018, cn1, c1, ca1, "x")
+            ypos = return_vals(data_tracking2018, cn1, c1, ca1, "y")
+        elif str(gameId)[:4] == "2019" :
+            xpos = return_vals(data_tracking2019, cn1, c1, ca1, "x")
+            ypos = return_vals(data_tracking2019, cn1, c1, ca1, "y")   
+        else:
+            xpos = return_vals(data_tracking2020, cn1, c1, ca1, "x")
+            ypos = return_vals(data_tracking2020, cn1, c1, ca1, "y")  
+        xpos_pass.append(xpos)
+        ypos_pass.append(ypos)
+    xpos_pass = to_list(xpos_pass)
+    ypos_pass = to_list(ypos_pass)
+    return xpos_pass, ypos_pass
+
+#%%
+xpos_pass_forward_l, ypos_pass_forward_l = event_positions("pass_forward", "left")
+xpos_pass_shovel_l, ypos_pass_shovel_l = event_positions("pass_shovel", "left")
+xpos_pass_incomplete_l, ypos_pass_incomplete_l = event_positions("pass_outcome_incomplete", "left")
+xpos_pass_caught_l, ypos_pass_caught_l = event_positions("pass_outcome_caught", "left")
+xpos_pass_td_l, ypos_pass_td_l = event_positions("pass_outcome_touchdown", "left")
+xpos_pass_intercept_l, ypos_pass_intercept_l = event_positions("pass_outcome_interception", "left")
+
+
+xpos_pass_forward_r, ypos_pass_forward_r = event_positions("pass_forward", "right")
+xpos_pass_shovel_r, ypos_pass_shovel_r = event_positions("pass_shovel", "right")
+xpos_pass_incomplete_r, ypos_pass_incomplete_r = event_positions("pass_outcome_incomplete", "right")
+xpos_pass_caught_r, ypos_pass_caught_r = event_positions("pass_outcome_caught", "right")
+xpos_pass_td_r, ypos_pass_td_r = event_positions("pass_outcome_touchdown", "right")
+xpos_pass_intercept_r, ypos_pass_intercept_r = event_positions("pass_outcome_interception", "right")
+
+#%% get locations of all plays
+def all_locations():
+    xpos = []
+    ypos = []
+    for i in range(0, len(playId_all)):
+        print("datapoint",i)
+        playId = playId_all[i]
+        gameId = gameId_all[i]
+        cn = ["playId", "gameId", "team"]
+        c = ["==", "==", "=="]
+        ca = [playId, gameId, "football"]
+        if str(gameId)[:4] == "2018" :
+            xpos.append(return_vals(data_tracking2018, cn, c, ca, "x"))
+            ypos.append(return_vals(data_tracking2018, cn, c, ca, "y"))
+        elif str(gameId)[:4] == "2019" :
+            xpos.append(return_vals(data_tracking2019, cn, c, ca, "x"))
+            ypos.append(return_vals(data_tracking2019, cn, c, ca, "y"))
+        else:
+            xpos.append(return_vals(data_tracking2020, cn, c, ca, "x"))
+            ypos.append(return_vals(data_tracking2020, cn, c, ca, "y"))
+    xpos = to_list(xpos)
+    ypos = to_list(ypos)
+    return xpos, ypos
+xpos, ypos = all_locations()
+
+#%%pass forward caught
+import matplotlib.pyplot as plt
+from statistics import median
+ 
+def return_path(event1_x, event1_y, event2_x, event2_y):
+    outcomes_x = []
+    outcomes_y = []
+    for i in range(0, len(xpos)):
+        condition1 = False
+        condition2 = False
+        xpositions = xpos[i]
+        ypositions = ypos[i]
+        if len(event1_x[i]) == 1: 
+            condition1 = True
+            xpos1 = (event1_x[i])[0]
+            ypos1 = (event1_y[i])[0]
+        if len(event2_x[i]) == 1:
+            condition2 = True
+            xpos2 = (event2_x[i])[0]
+            ypos2 = (event2_y[i])[0]
+        if condition1 == True & condition2 == True:
+                indices_x1 = [i for i, x in enumerate(xpositions) if x == xpos1]
+                indices_y1 = [i for i, y in enumerate(ypositions) if y == ypos1]
+                for idx_a in indices_x1:
+                    if idx_a in indices_y1:
+                        idx_x1 = idx_a
+                for idx_b in indices_y1:
+                    if idx_b in indices_x1:
+                        idx_y1 = idx_b
+                indices_x2 = [i for i, x in enumerate(xpositions) if x == xpos2]
+                indices_y2 = [i for i, y in enumerate(ypositions) if y == ypos2]
+                for idx_c in indices_x2:
+                    if idx_c in indices_y2:
+                        idx_x2 = idx_c
+                for idx_d in indices_y2:
+                    if idx_d in indices_x2:
+                        idx_y2 = idx_d
+                xs = xpositions[idx_x1:idx_x2+1]
+                ys = ypositions[idx_y1:idx_y2+1]
+                outcomes_x.append(xs)
+                outcomes_y.append(ys)
+        else:
+            outcomes_x.append("empty")
+            outcomes_y.append("empty") 
+    return outcomes_x, outcomes_y
+
+#%%
+xpf_c_l, ypf_c_l = return_path(xpos_pass_forward_l, ypos_pass_forward_l, xpos_pass_caught_l, ypos_pass_caught_l)
+xpf_c_r, ypf_c_r = return_path(xpos_pass_forward_r, ypos_pass_forward_r, xpos_pass_caught_r, ypos_pass_caught_r)
+
+xpf_int_l, ypf_int_l = return_path(xpos_pass_forward_l, ypos_pass_forward_l, xpos_pass_intercept_l, ypos_pass_intercept_l)
+xpf_int_r, ypf_int_r = return_path(xpos_pass_forward_r, ypos_pass_forward_r, xpos_pass_intercept_r, ypos_pass_intercept_r)
+
+xpf_inc_l, ypf_inc_l = return_path(xpos_pass_forward_l, ypos_pass_forward_l, xpos_pass_incomplete_l, ypos_pass_incomplete_l)
+xpf_inc_r, ypf_inc_r = return_path(xpos_pass_forward_r, ypos_pass_forward_r, xpos_pass_incomplete_r, ypos_pass_incomplete_r)
+
+xpf_td_l, ypf_td_l = return_path(xpos_pass_forward_l, ypos_pass_forward_l, xpos_pass_td_l, ypos_pass_td_l)
+xpf_td_r, ypf_td_r = return_path(xpos_pass_forward_r, ypos_pass_forward_r, xpos_pass_td_r, ypos_pass_td_r)
+
+xps_c_l, yps_c_l = return_path(xpos_pass_shovel_l, ypos_pass_shovel_l, xpos_pass_caught_l, ypos_pass_caught_l)
+xps_c_r, yps_c_r = return_path(xpos_pass_shovel_r, ypos_pass_shovel_r, xpos_pass_caught_r, ypos_pass_caught_r)
+
+xps_int_l, yps_int_l = return_path(xpos_pass_shovel_l, ypos_pass_shovel_l, xpos_pass_intercept_l, ypos_pass_intercept_l)
+xps_int_r, yps_int_r = return_path(xpos_pass_shovel_r, ypos_pass_shovel_r, xpos_pass_intercept_r, ypos_pass_intercept_r)
+
+xps_inc_l, yps_inc_l = return_path(xpos_pass_shovel_l, ypos_pass_shovel_l, xpos_pass_incomplete_l, ypos_pass_incomplete_l)
+xps_inc_r, yps_inc_r = return_path(xpos_pass_shovel_r, ypos_pass_shovel_r, xpos_pass_incomplete_r, ypos_pass_incomplete_r)
+
+xps_td_l, yps_td_l = return_path(xpos_pass_shovel_l, ypos_pass_shovel_l, xpos_pass_td_l, ypos_pass_td_l)
+xps_td_r, yps_td_r = return_path(xpos_pass_shovel_r, ypos_pass_shovel_r, xpos_pass_td_r, ypos_pass_td_r)
+
+
+#%%
+def rotation(fx, fy, gx, gy):
+    for i in range(0, len(fx)):
+        if fx[i] != "empty":
+            new_x = []
+            for x in fx[i]:
+                x_r = 120 - x
+                new_x.append(x_r)
+            gx.append(new_x)
+            new_y = []
+            for y in fy[i]:
+                y_r = 53.3 - y
+                new_y.append(y_r)
+            gy.append(new_y)
+    return gx, gy
+
+xpf_c, ypf_c = rotation(xpf_c_l, ypf_c_l, xpf_c_r, ypf_c_r)
+xpf_int, ypf_int = rotation(xpf_int_l, ypf_int_l, xpf_int_r, ypf_int_r)
+xpf_inc, ypf_inc = rotation(xpf_inc_l, ypf_inc_l, xpf_inc_r, ypf_inc_r)
+xpf_td, ypf_td = rotation(xpf_td_l, ypf_td_l, xpf_td_r, ypf_td_r)
+
+xps_c, yps_c = rotation(xps_c_l, yps_c_l, xps_c_r, yps_c_r)
+xps_int, yps_int = rotation(xps_int_l, yps_int_l, xps_int_r, yps_int_r)
+xps_inc, yps_inc = rotation(xps_inc_l, yps_inc_l, xps_inc_r, yps_inc_r)
+xps_td, yps_td = rotation(xps_td_l, yps_td_l, xps_td_r, yps_td_r)
+#%%
+xpf_c = np.array(xpf_c)
+ypf_c = np.array(ypf_c)
+
+xpf_int = np.array(xpf_int)
+ypf_int = np.array(ypf_int)
+
+xpf_inc = np.array(xpf_inc)
+ypf_inc = np.array(ypf_inc)
+
+xpf_td = np.array(xpf_td)
+ypf_td = np.array(ypf_td)
+
+xps_c = np.array(xps_c)
+yps_c = np.array(yps_c)
+
+xps_int = np.array(xps_int)
+yps_int = np.array(yps_int)
+
+xps_inc = np.array(xps_inc)
+yps_inc = np.array(yps_inc)
+
+xps_td = np.array(xps_td)
+yps_td = np.array(yps_td)
