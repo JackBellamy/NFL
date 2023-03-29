@@ -64,7 +64,7 @@ for i in range(num_bins-1, 0, -1):
 #%%
 
 fig, axs = plt.subplots(1,1,figsize=(12,8))
-bins = 15
+bins = 20
 score_values2 = (np.histogram(xpos_fgs, range = (lb2, ub2), bins=bins, density = False))[0]
 miss_values2 = (np.histogram(xpos_fgm, range = (lb2, ub2), bins=bins, density = False))[0]
 percentages = []
@@ -77,15 +77,17 @@ axs.plot(x, percentages, color = "black", lw = 2)
 
 axs2 = axs.twinx()
 axs.set_xlim(lb2, ub2)
-axs2.hist(xpos_fgs, range = (lb2, ub2), bins = 40, color = "lightseagreen", edgecolor = "lightseagreen", alpha = 0.4, label = "Cumulative Scored")
+axs2.hist(xpos_fgs, range = (lb2, ub2), bins = 40, color = "green", edgecolor = "green", alpha = 0.4, label = "Cumulative Scored")
 axs2.hist(xpos_fgm, range = (lb2, ub2), bins = 40, color = "red", edgecolor = "red", alpha = 0.4, label = "Cumulative Missed")
-axs2.plot([1000, 10000], [100, 100], color = "black", lw = 2, label = "Percentage Success")
+axs.plot([1000, 10000], [100, 100], color = "black", lw = 2, label = "Percentage Success")
 #axs2.set_ylim(0, 21)
 #axs2.set_yticks(range(2, 22, 2))
 axs.set_ylim(0, 100)
+axs2.set_ylim(0, 70)
 #axs.set_yticks(range(0, 110, 10))
 axs.set_ylabel("Success of Kick (%)")
 axs2.set_ylabel("Counts")
 #axs.set_xticks(np.linspace(lb2+0.5, ub2-0.5, 9))
 axs.set_xlabel("Yardage from Goal")
+axs.plot([60, 65], [55.6, 55.6], color = "black", lw = 2, ls = "--")
 axs2.legend()
