@@ -42,3 +42,10 @@ x_sack20 = return_vals(data_tracking2020, ["team", "event"], ["==", "=="], ["foo
 x_strip_sack20 = return_vals(data_tracking2020, ["team", "event"], ["==", "=="], ["football", "qb_strip_sack"], "x")
 y_sack20 = return_vals(data_tracking2020, ["team", "event"], ["==", "=="], ["football", "qb_sack"], "y")
 y_strip_sack20 = return_vals(data_tracking2020, ["team", "event"], ["==", "=="], ["football", "qb_strip_sack"], "y")
+
+#%%
+
+ds19 = return_vals(data_tracking2019, ["team", "event"], ["==", "=="], ["football", "qb_sack"], "playDirection")
+ds20 = return_vals(data_tracking2020, ["team", "event"], ["==", "=="], ["football", "qb_sack"], "playDirection")
+dss19 = return_vals(data_tracking2019, ["team", "event"], ["==", "=="], ["football", "qb_strip_sack"], "playDirection")
+
