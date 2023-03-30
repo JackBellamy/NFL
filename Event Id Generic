@@ -89,9 +89,9 @@ def return_events(gameId, playId):
         cn = ["team", "gameId", "playId"]
         c = ["==", "==", "=="]
         ca = ["football", gameId[i], playId[i]]
-        if str(gameId_td[i])[:4] == "2018":
+        if str(gameId[i])[:4] == "2018":
             events.append(return_vals(data_tracking2018, cn, c, ca, "event"))
-        elif str(gameId_td[i])[:4] == "2019":
+        elif str(gameId[i])[:4] == "2019":
             events.append(return_vals(data_tracking2019, cn, c, ca, "event"))
         else:
             events.append(return_vals(data_tracking2020, cn, c, ca, "event"))
