@@ -1,0 +1,162 @@
+#imports
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import math
+data_plays = pd.read_csv("~/Desktop/NFL/Data/plays.csv")
+data_tracking2018 = pd.read_csv("~/Desktop/NFL/Data/tracking2018.csv")
+data_tracking2019 = pd.read_csv("~/Desktop/NFL/Data/tracking2019.csv")
+data_tracking2020 = pd.read_csv("~/Desktop/NFL/Data/tracking2020.csv")
+
+#%% return values based on conditions
+def return_vals(data, condition_name, comparison, condition_answer, return_collumn):
+    conditions = ""
+    for i in range(0, len(condition_name)-1):
+        cn = condition_name[i]
+        c = comparison[i]
+        ca = condition_answer[i]
+        if type(ca) is str:
+            conditions += cn+" "+c+" "+"\""+ca+"\""+" "+"&"+" "
+        else:
+            ca = str(ca)
+            conditions += cn+" "+c+" "+ca+" "+"&"+" "
+    cn = condition_name[-1]
+    c = comparison[-1]
+    ca = condition_answer[-1]
+    if type(ca) is str:
+        conditions += cn+" "+c+" "+"\""+ca+"\""
+    else:
+        ca = str(ca)
+        conditions += cn+" "+c+" "+ca
+    conditions = str(conditions)
+    return data.query(conditions)[return_collumn]
+
+playIds_td = (return_vals(data_tracking2018, ["event"], ["=="], ["touchdown"], "playId")).tolist()
+gameIds_td = (return_vals(data_tracking2018, ["event"], ["=="], ["touchdown"], "gameId")).tolist()
+
+#%% n = game/play index, k = k nearest players
+def field_control_average(n, frame_start, frame_end, k, top_speed, reaction_time): 
+    playId = playIds_td[n]
+    gameId = gameIds_td[n]
+    ca = ["gameId", "playId", "team"]
+    c = ["==", "==", "=="]
+    cn_home = [gameId, playId, "home"]
+    cn_away = [gameId, playId, "away"]
+    
+    x_home = (np.array(return_vals(data_tracking2018, ca, c, cn_home, "x")))
+    y_home = np.array(return_vals(data_tracking2018, ca, c, cn_home, "y"))
+    x_away = (np.array(return_vals(data_tracking2018, ca, c, cn_away, "x")))
+    y_away = np.array(return_vals(data_tracking2018, ca, c, cn_away, "y"))
+    s_home = (np.array(return_vals(data_tracking2018, ca, c, cn_home, "s")))
+    s_away = np.array(return_vals(data_tracking2018, ca, c, cn_away, "s"))    
+    d_home = (np.array(return_vals(data_tracking2018, ca, c, cn_home, "dir")))
+    d_away = np.array(return_vals(data_tracking2018, ca, c, cn_away, "dir"))
+    
+    x_home = x_home.reshape(11, int(len(x_home)/11))
+    y_home = y_home.reshape(11, int(len(y_home)/11))
+    x_away = x_away.reshape(11, int(len(x_away)/11))
+    y_away = y_away.reshape(11, int(len(y_away)/11))
+    s_home = s_home.reshape(11, int(len(s_home)/11))
+    s_away = s_away.reshape(11, int(len(s_away)/11))
+    d_home = d_home.reshape(11, int(len(d_home)/11))
+    d_away = d_away.reshape(11, int(len(d_away)/11))
+    
+    field_control_all = []
+    for n in range(frame_start, frame_end+1):
+        x_h = []
+        y_h = []
+        d_h = []
+        s_h = []
+        for i in range(0, 11):
+            x_val_h = (x_home[i])[n]
+            x_h.append(x_val_h)
+            y_val_h = (y_home[i])[n]
+            y_h.append(y_val_h)
+            d_val_h = (d_home[i])[n]
+            d_h.append(d_val_h)
+            s_val_h = (s_home[i])[n]
+            s_h.append(s_val_h)
+            
+        x_a = []
+        y_a = []
+        d_a = []
+        s_a = []
+        for i in range(0, 11):
+            x_val_a = (x_away[i])[n]
+            x_a.append(x_val_a)
+            y_val_a = (y_away[i])[n]
+            y_a.append(y_val_a)
+            d_val_a = (d_away[i])[n]
+            d_a.append(d_val_a)
+            s_val_a = (s_away[i])[n]
+            s_a.append(s_val_a)
+
+     
+        field_control_frame = np.zeros([53, 120])
+        for x in range(0, 120):
+            for y in range(0, 53):
+                t_h = []
+                t_a = []
+                for i in range(0, 11):
+                    is_h = s_h[i]
+                    id_h = d_h[i]
+                    ix_h = x_h[i]
+                    iy_h = y_h[i] 
+                    
+                    ivx_h = is_h * math.cos(math.pi/2)-math.radians(id_h)
+                    ivy_h = is_h * math.sin(math.pi/2)-math.radians(id_h)
+                    after_reaction_x_h = reaction_time * ivx_h
+                    after_reaction_y_h = reaction_time * ivy_h
+                    
+                    distance_x_h = abs((ix_h + after_reaction_x_h) - x)
+                    distance_y_h = abs((iy_h + after_reaction_y_h) - y)
+                    distance_h = math.sqrt((distance_x_h ** 2)+(distance_y_h ** 2))
+                    
+                    t_h.append(distance_h/top_speed)
+
+                    
+                    is_a = s_a[i]
+                    id_a = d_a[i]
+                    ix_a = x_a[i]
+                    iy_a = y_a[i] 
+                    
+                    ivx_a = is_a * math.cos(math.pi/2)-math.radians(id_a)
+                    ivy_a = is_a * math.sin(math.pi/2)-math.radians(id_a)
+                    
+                    after_reaction_x_a = reaction_time * ivx_a
+                    after_reaction_y_a = reaction_time * ivy_a
+                    
+                    distance_x_a = abs((ix_a + after_reaction_x_a) - x)
+                    distance_y_a = abs((iy_a + after_reaction_y_a) - y)
+                    distance_a = math.sqrt((distance_x_a ** 2)+(distance_y_a ** 2))
+                    
+                    t_a.append(distance_a/top_speed) 
+
+                    
+                t_h = sorted(set(t_h))[:k]
+                t_a = sorted(set(t_a))[:k]
+                th = sum(t_h)
+                ta = sum(t_a)
+
+
+                field_control_frame[y,x] = 1/(1+math.e ** (th-ta))
+        field_control_all.append(field_control_frame)
+        
+    field_control_average = np.zeros([53,120])
+    for x in range(0, 120):
+        for y in range(0, 53):
+            fc_vals = []
+            for i in range(0, len(field_control_all)):
+                fc_vals.append(((field_control_all[i])[y])[x])
+            field_control_average[y,x] = (sum(fc_vals)/len(fc_vals))
+    return field_control_average
+
+
+#%%
+values = field_control_average(450, 80, 90, 3, 10, 0.7)
+
+fig, ax = plt.subplots(1, 1,figsize=(15, 15))
+ax.imshow(values, cmap = "seismic")
+ax.set_xticks([])
+ax.set_yticks([])
+ax.set_aspect(1)
