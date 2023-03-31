@@ -1,0 +1,108 @@
+#imports
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import math
+data_games = pd.read_csv("~/Desktop/NFL/Data/games.csv")
+data_plays = pd.read_csv("~/Desktop/NFL/Data/plays.csv")
+data_tracking2018 = pd.read_csv("~/Desktop/NFL/Data/tracking2018.csv")
+data_tracking2019 = pd.read_csv("~/Desktop/NFL/Data/tracking2019.csv")
+data_tracking2020 = pd.read_csv("~/Desktop/NFL/Data/tracking2020.csv")
+
+#%% setup game/play Ids 
+idx = np.load("/Users/TobyCheng/Desktop/NFL/Arrays/runsB_idx.npy")
+gameIds = idx[:, 0].tolist()
+playIds = idx[:, 1].tolist()
+del gameIds[29], playIds[29] #not really a run
+del idx
+def return_vals(data, condition_name, comparison, condition_answer, return_collumn):
+    conditions = ""
+    for i in range(0, len(condition_name)-1):
+        cn = condition_name[i]
+        c = comparison[i]
+        ca = condition_answer[i]
+        if type(ca) is str:
+            conditions += cn+" "+c+" "+"\""+ca+"\""+" "+"&"+" "
+        else:
+            ca = str(ca)
+            conditions += cn+" "+c+" "+ca+" "+"&"+" "
+    cn = condition_name[-1]
+    c = comparison[-1]
+    ca = condition_answer[-1]
+    if type(ca) is str:
+        conditions += cn+" "+c+" "+"\""+ca+"\""
+    else:
+        ca = str(ca)
+        conditions += cn+" "+c+" "+ca
+    conditions = str(conditions)
+    return data.query(conditions)[return_collumn]
+
+#%%nflId of player doing the run 
+
+nflIds = [43534, 40630, 46203, 40249, 45355, 43375, 46432, 46242, 40656, 38578, 38815, 46218, 45244, 36060, 48026, 46203, 48472, 37265, 33338, 45296, 43534, 48454, 40032, 42663, 53146, 40032, 52472, 43534, 40113, 36060]
+
+#%%
+def plays_stats():
+    yard_line = []
+    yards_gained = []
+    for i in range(0, len(gameIds)):
+        gid = gameIds[i]
+        pid = playIds[i]
+        cn = ["gameId", "playId"]
+        c = ["==", "=="]
+        ca = [gid, pid]
+        yard_line.append(int(return_vals(data_plays, cn, c, ca, "yardlineNumber")))
+        yg = int(return_vals(data_plays, cn, c, ca, "playResult"))
+        py = (return_vals(data_plays, cn, c, ca, "penaltyYards"))
+        if math.isnan(py) == False:
+            yards_gained.append(yg-int(py))
+        else:
+            yards_gained.append(yg)
+    return yard_line, yards_gained
+
+def tracking_stats():
+    p_dir = []
+    p_x = []
+    p_y = []
+    play_dir = []
+    for i in range(0, len(gameIds)):
+        print(i)
+        nflid = nflIds[i]
+        gid = gameIds[i]
+        pid = playIds[i]
+        
+        cn = ["gameId", "playId", "event", "nflId"]
+        c = ["==", "==", "==", "=="]
+        ca = [gid, pid, "run", nflid]
+        if str(gid)[:4] == "2018":
+            p_dir.append(return_vals(data_tracking2018, cn, c, ca, "dir"))
+            p_x.append(return_vals(data_tracking2018, cn, c, ca, "x"))
+            p_y.append(return_vals(data_tracking2018, cn, c, ca, "y"))
+            play_dir.append(return_vals(data_tracking2018, cn, c, ca, "playDirection"))
+        elif str(gid)[:4] == "2019":
+            p_dir.append(return_vals(data_tracking2019, cn, c, ca, "dir"))
+            p_x.append(return_vals(data_tracking2019, cn, c, ca, "x"))
+            p_y.append(return_vals(data_tracking2019, cn, c, ca, "y"))
+            play_dir.append(return_vals(data_tracking2019, cn, c, ca, "playDirection"))
+        elif str(gid)[:4] == "2020":
+            p_dir.append(return_vals(data_tracking2020, cn, c, ca, "dir"))
+            p_x.append(return_vals(data_tracking2020, cn, c, ca, "x"))
+            p_y.append(return_vals(data_tracking2020, cn, c, ca, "y"))
+            play_dir.append(return_vals(data_tracking2020, cn, c, ca, "playDirection"))
+    
+    return p_dir, p_x, p_y, play_dir
+
+#%%
+yard_line, yards_gained = plays_stats()
+p_dir, p_x, p_y, play_dir = tracking_stats() 
+
+#%%
+p_dir = [item for sublist in p_dir for item in sublist]
+p_x = [item for sublist in p_x for item in sublist]
+p_y = [item for sublist in p_y for item in sublist]
+play_dir = [item for sublist in play_dir for item in sublist]
+
+#%%
+data = np.column_stack((gameIds, playIds, yard_line, yards_gained, p_dir, p_x, p_y, play_dir))
+
+
