@@ -52,7 +52,7 @@ def plays_stats():
         cn = ["gameId", "playId"]
         c = ["==", "=="]
         ca = [gid, pid]
-        yard_line.append(int(return_vals(data_plays, cn, c, ca, "yardlineNumber")))      
+        yard_line.append(int(return_vals(data_plays, cn, c, ca, "absoluteYardlineNumber")))      
         yg = int(return_vals(data_plays, cn, c, ca, "playResult"))
         py = (return_vals(data_plays, cn, c, ca, "penaltyYards"))
         if math.isnan(py) == False:
