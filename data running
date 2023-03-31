@@ -37,7 +37,7 @@ def return_vals(data, condition_name, comparison, condition_answer, return_collu
     conditions = str(conditions)
     return data.query(conditions)[return_collumn]
 
-#%%nflId of player doing the run 
+#%%nflId of player doing the run  (this was done manually)
 
 nflIds = [43534, 40630, 46203, 40249, 45355, 43375, 46432, 46242, 40656, 38578, 38815, 46218, 45244, 36060, 48026, 46203, 48472, 37265, 33338, 45296, 43534, 48454, 40032, 42663, 53146, 40032, 52472, 43534, 40113, 36060]
 
@@ -45,13 +45,14 @@ nflIds = [43534, 40630, 46203, 40249, 45355, 43375, 46432, 46242, 40656, 38578, 
 def plays_stats():
     yard_line = []
     yards_gained = []
+    possession_tean = []
     for i in range(0, len(gameIds)):
         gid = gameIds[i]
         pid = playIds[i]
         cn = ["gameId", "playId"]
         c = ["==", "=="]
         ca = [gid, pid]
-        yard_line.append(int(return_vals(data_plays, cn, c, ca, "yardlineNumber")))
+        yard_line.append(int(return_vals(data_plays, cn, c, ca, "yardlineNumber")))      
         yg = int(return_vals(data_plays, cn, c, ca, "playResult"))
         py = (return_vals(data_plays, cn, c, ca, "penaltyYards"))
         if math.isnan(py) == False:
@@ -104,8 +105,6 @@ play_dir = [item for sublist in play_dir for item in sublist]
 
 #%%
 def frame_starts():
-    gameIds = data[:,0]
-    playIds = data[:,1]
     times = []
     for i in range(0, len(gameIds)):
         gameId = gameIds[i]
@@ -142,7 +141,31 @@ def frame_starts():
         frames.append(t_1.index(t_2))
     return frames
 frames = frame_starts()
-#%%
-data = np.column_stack((gameIds, playIds, yard_line, yards_gained, p_dir, p_x, p_y, play_dir, frames))
 
+
+#%%
+def team_in_possession_values():
+    team_in_possession = []
+    for i in range(0, len(gameIds)):
+        gameId = gameIds[i]
+        playId = playIds[i]
+        ca1 = ["gameId"]
+        c1 = ["=="]
+        cn1 = [gameId]
+        ca2 = ["gameId", "playId"]
+        c2 = ["==", "=="]
+        cn2 = [gameId, playId]
+        team_home = (return_vals(data_games, ca1, c1, cn1, "homeTeamAbbr")).tolist()
+        team_away = (return_vals(data_games, ca1, c1, cn1, "visitorTeamAbbr")).tolist()
+        team_s = (return_vals(data_plays, ca2, c2, cn2, "possessionTeam")).tolist()
+        print(team_home, team_away, team_s)
+        if team_s == team_home:
+            team_in_possession.append("home")
+        elif team_s == team_away:
+            team_in_possession.append("away")
+    return team_in_possession
+        
+team_in_possession = team_in_possession_values()
+#%%
+data = np.column_stack((gameIds, playIds, yard_line, yards_gained, p_dir, p_x, p_y, play_dir, frames, team_in_possession))
 
