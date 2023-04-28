@@ -1,0 +1,40 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+data = pd.read_csv("~/Desktop/running.csv")
+
+#%%
+def return_vals(data, condition_name, comparison, condition_answer, return_collumn):
+    conditions = ""
+    for i in range(0, len(condition_name)-1):
+        cn = condition_name[i]
+        c = comparison[i]
+        ca = condition_answer[i]
+        if type(ca) is str:
+            conditions += cn+" "+c+" "+"\""+ca+"\""+" "+"&"+" "
+        else:
+            ca = str(ca)
+            conditions += cn+" "+c+" "+ca+" "+"&"+" "
+    cn = condition_name[-1]
+    c = comparison[-1]
+    ca = condition_answer[-1]
+    if type(ca) is str:
+        conditions += cn+" "+c+" "+"\""+ca+"\""
+    else:
+        ca = str(ca)
+        conditions += cn+" "+c+" "+ca
+    conditions = str(conditions)
+    return data.query(conditions)[return_collumn]
+
+#%%
+playIds = data['PlayId'].unique()
+yards_gained = []
+counter = 0
+for playId in playIds:
+    counter+=1
+    yards = (return_vals(data, ["PlayId"], ["=="], [playId], "Yards")).unique()
+    yards_gained.append(yards[0])
+    print(counter)
+
+#%%
+yards_gained = np.array(yards_gained)
