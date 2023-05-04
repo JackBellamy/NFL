@@ -1,0 +1,251 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import math
+from tqdm import tqdm
+data_all = pd.read_csv("~/Desktop/running.csv")
+
+#%%
+def return_vals(data, condition_name, comparison, condition_answer):
+    conditions = ""
+    for i in range(0, len(condition_name)-1):
+        cn = condition_name[i]
+        c = comparison[i]
+        ca = condition_answer[i]
+        if type(ca) is str:
+            conditions += cn+" "+c+" "+"\""+ca+"\""+" "+"&"+" "
+        else:
+            ca = str(ca)
+            conditions += cn+" "+c+" "+ca+" "+"&"+" "
+    cn = condition_name[-1]
+    c = comparison[-1]
+    ca = condition_answer[-1]
+    if type(ca) is str:
+        conditions += cn+" "+c+" "+"\""+ca+"\""
+    else:
+        ca = str(ca)
+        conditions += cn+" "+c+" "+ca
+    conditions = str(conditions)
+    return data.query(conditions)
+
+
+#%%
+playIds = data_all['PlayId'].unique()
+play_dirs = []
+rusherIds = []
+yards_fds = []
+yards_tds = []
+pos_teams = []
+away_teams = []
+home_teams = []
+LOSs = []
+yards_gained = []
+data_play = data_all[["PlayId", "PlayDirection", "NflIdRusher", "Distance", "PossessionTeam", 'HomeTeamAbbr', 'VisitorTeamAbbr', 'YardLine', 'Yards']]
+
+counter = 0
+with tqdm(total=len(playIds)) as pbar:
+    for playId in playIds:
+        counter +=1
+        play_data_i = return_vals(data_play, ["PlayId"], ["=="], [playId])
+        play_dirs.append(play_data_i.iloc[(0,1)])
+        rusherIds.append(play_data_i.iloc[(0,2)])
+        yards_fds.append(play_data_i.iloc[(0,3)])
+        pos_teams.append(play_data_i.iloc[(0,4)])
+        home_teams.append(play_data_i.iloc[(0,5)])
+        away_teams.append(play_data_i.iloc[(0,6)])
+        LOSs.append(play_data_i.iloc[(0,7)])
+        yards_gained.append(play_data_i.iloc[(0,8)])
+        pbar.update(1)
+
+
+
+
+#%%
+#vars
+top_speed = 7
+reaction_time = 1
+attempt_touchdown = False
+
+data_fc = data_all[['PlayId','Team','X','Y','Dir','S', 'NflId']]
+
+paths = []
+counter = 0
+with tqdm(total=len(playIds)) as pbar:
+    for n in range(0, len(playIds)):
+        counter += 1
+        playId = playIds[n]
+        play_dir = play_dirs[n]
+        rushId = rusherIds[n]
+        yards_fd = yards_fds[n]
+        pos_team = pos_teams[n] 
+        home_team = home_teams[n]
+        away_team = away_teams[n]
+        LOS = LOSs[n]
+        
+        
+        if pos_team == "BLT":
+            pos_team = "BAL"
+        if pos_team == "CLV":
+            pos_team = "CLE"
+        if pos_team == "ARZ":
+            pos_team = "ARI"
+        if pos_team == "HST":
+            pos_team = "HOU"
+        home_data = return_vals(data_fc, ["PlayId", "Team"], ["==", "=="], [playId, "home"])
+        away_data = return_vals(data_fc, ["PlayId", "Team"], ["==", "=="], [playId, "away"])
+        x_h = home_data["X"].tolist()
+        y_h = home_data["Y"].tolist()
+        d_h = home_data["Dir"].tolist()
+        s_h = home_data["S"].tolist()
+        x_a = away_data["X"].tolist()
+        y_a = away_data["Y"].tolist()
+        d_a = away_data["Dir"].tolist()
+        s_a = away_data["S"].tolist()
+        
+        
+        #Calculating the Field Control
+        field_control = np.zeros([53, 120])
+        for x in range(0, 120):
+            for y in range(0, 53):
+                t_h = []
+                t_a = []
+                for i in range(0, len(x_h)):
+                    is_h = s_h[i]
+                    id_h = d_h[i]
+                    ix_h = x_h[i]
+                    iy_h = y_h[i] 
+                    ivx_h = is_h * math.cos(math.pi/2)-math.radians(id_h)
+                    ivy_h = is_h * math.sin(math.pi/2)-math.radians(id_h)
+                    after_reaction_x_h = reaction_time * ivx_h
+                    after_reaction_y_h = reaction_time * ivy_h
+                    distance_x_h = abs((ix_h + after_reaction_x_h) - x)
+                    distance_y_h = abs((iy_h + after_reaction_y_h) - y)
+                    distance_h = math.sqrt((distance_x_h ** 2)+(distance_y_h ** 2))
+                    t_h.append(distance_h/top_speed)              
+                for i in range(0, len(x_a)):
+                    is_a = s_a[i]
+                    id_a = d_a[i]
+                    ix_a = x_a[i]
+                    iy_a = y_a[i] 
+                    ivx_a = is_a * math.cos(math.pi/2)-math.radians(id_a)
+                    ivy_a = is_a * math.sin(math.pi/2)-math.radians(id_a)
+                    after_reaction_x_a = reaction_time * ivx_a
+                    after_reaction_y_a = reaction_time * ivy_a
+                    distance_x_a = abs((ix_a + after_reaction_x_a) - x)
+                    distance_y_a = abs((iy_a + after_reaction_y_a) - y)
+                    distance_a = math.sqrt((distance_x_a ** 2)+(distance_y_a ** 2))
+                    t_a.append(distance_a/top_speed)         
+                th = sorted(set(t_h))[0]
+                ta = sorted(set(t_a))[0]
+                field_control[y,x] = 1/(1+math.e ** (th-ta))
+                
+        #Calculating the Position of Rusher
+        nflIds = home_data["NflId"].tolist() + away_data["NflId"].tolist()
+        rush_idx = nflIds.index(rushId)
+        x_all_pos = x_h + x_a
+        y_all_pos = y_h + y_a
+        x_pos = round(x_all_pos[rush_idx])
+        y_pos = round(y_all_pos[rush_idx])
+        
+        
+        #Normalizing the Field Control and Locations for Team Possession and Play Direction
+        if play_dir == "left":
+            field_control = np.rot90(field_control, 2)
+            x_pos = 120 - x_pos
+            y_pos = 53 - y_pos
+            LOS = 120 - LOS
+            
+            
+        if pos_team == home_team:
+            field_control = 1 - field_control
+        elif pos_team != away_team:
+            if pos_team != home_team:
+                print("Error: pos_team not in away_teams or home_teams")
+        
+        #Calculating Cumulative Field Control
+        s1 = field_control
+        s2 = np.zeros([53, 120])
+        for x_inv in range(0, 120):
+            x = 120 - x_inv - 1
+            if x == x_pos:
+                break
+            elif x == 119:
+                for y in range(0, 52):
+                    s2[y,x] = s1[y,x]
+            else:
+                for y in range(0, 52):
+                    if y == 0:
+                        value_right_middle = s2[y, x+1]
+                        value_right_down = s2[y+1, x+1]
+                        options = [value_right_middle, value_right_down]
+                        s2[y, x] = (min(options) + s1[y, x])
+                    elif y == 52:
+                        value_right_middle = s2[y, x+1]
+                        value_right_up = s2[y-1, x+1]
+                        options = [value_right_middle, value_right_up]
+                        s2[y, x] = (min(options) + s1[y, x])
+                    else:
+                        counter += 1
+                        value_right_down = s2[y-1, x+1]
+                        value_right_middle = s2[y, x+1]
+                        value_right_up = s2[y-1, x+1]
+                        options = [value_right_up, value_right_middle, value_right_down]
+                        s2[y, x] = (min(options) + s1[y, x])
+        
+        #Calculating Min Path
+        if attempt_touchdown == False:
+            xtarget = LOS + yards_fd 
+            if xtarget > 119:
+                xtarget = 119
+        else:
+            xtarget = 119
+        
+        pathx = []
+        pathy = []
+        for x in range(x_pos, xtarget):
+            if x == x_pos:
+                pathx.append(x)
+                pathy.append(y_pos)
+            else:                
+                pathx.append(x)
+                y = pathy[-1]
+                if y <= 1:
+                    right_y_middle = (s2[y, x+1])
+                    right_y_down = s2[y+1, x+1]
+                    options = [right_y_middle, right_y_down]
+                    choice = options.index(min(options))           
+                    if choice == 0:
+                        pathy.append(y)
+                    elif choice == 1:
+                        pathy.append(y+1)
+                elif y == 52:
+                    right_y_up = s2[y-1, x+1]
+                    right_y_middle = s2[y, x+1]
+                    options = [right_y_up, right_y_middle]
+                    choice = options.index(min(options))            
+                    if choice == 0:
+                        pathy.append(y-1)
+                    elif choice == 1:
+                        pathy.append(y)
+                else:
+                    right_y_up = s2[y-1, x+1]
+                    right_y_middle = s2[y, x+1]
+                    right_y_down = s2[y+1, x+1]
+                    options = [right_y_up, right_y_middle, right_y_down]
+                    choice = options.index(min(options))
+                    if choice == 0:
+                        pathy.append(y-1)
+                    elif choice == 1:
+                        pathy.append(y)
+                    elif choice == 2:
+                        pathy.append(y+1)
+        
+        path_energy = []
+        for i in range(0, len(pathx)):
+            path_energy.append(s1[pathy[i],pathx[i]])
+        paths.append(path_energy)
+        pbar.update(1)
+
+#%%
+paths = np.array(paths)
+        
