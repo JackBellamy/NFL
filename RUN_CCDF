@@ -1,0 +1,155 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import math
+
+yards_gained = np.load("/Users/TobyCheng/Desktop/yards_gained.npy")
+paths = np.load("/Users/TobyCheng/Desktop/paths.npy", allow_pickle=True)
+import matplotlib as mpl
+import matplotlib.font_manager as font_manager
+
+plt.style.use('default')
+mpl.rcParams['font.family']='serif'
+cmfont = font_manager.FontProperties(fname=mpl.get_data_path() + '/fonts/ttf/cmr10.ttf')
+mpl.rcParams['font.serif']=cmfont.get_name()
+mpl.rcParams['mathtext.fontset']='cm'
+mpl.rcParams['axes.unicode_minus']=False
+mpl.rcParams['axes.linewidth'] = 1
+
+#%%
+
+p = paths
+e = []
+yg = []
+for k in range(0, len(p)):
+    p_e = p[k]
+    f10_pe = p_e[:10]
+    if len(f10_pe) < 10:
+        continue
+    else:
+        e.append((sum(f10_pe))/(len(f10_pe)))
+        yg.append(yards_gained[k])
+
+#%%
+egy = sorted(e)
+
+iq = []
+count = 0
+while True:
+    count += 1
+    if count == 4018:
+        iq.append(egy[count])
+    elif count == 4018*2:
+        iq.append(egy[count])
+    elif count == 4018*3:
+        iq.append(egy[count])
+    elif count == 16070:
+        break
+        
+
+
+#%%1-CDF PLoT
+import seaborn as sns
+import matplotlib as mpl
+import scipy.stats as st
+cmap = mpl.cm.get_cmap('viridis')
+
+average_energy = e
+yg_fc1 = []
+yg_fc2 = []
+yg_fc3 = []
+yg_fc4 = []
+
+for i in range(0, len(yg)):
+    if average_energy[i] > 0.42:
+        if average_energy[i] > 0.47:
+            if average_energy[i] > 0.5:
+                yg_fc4.append(yg[i])
+            else:
+                yg_fc3.append(yg[i])
+        else:
+            yg_fc2.append(yg[i])
+    else:
+        yg_fc1.append(yg[i])  
+
+  
+    
+def plot(yg_fc4, col, lab):
+    x4 = np.linspace(min(yg_fc4), max(yg_fc4), 1000)
+    count = 0
+    for x in x4:
+        if x<5:
+            count += 1
+            continue
+        else:
+            idx = count
+            break
+    params4 = st.lognorm.fit(yg_fc4)
+    arg4 = params4[:-2]
+    cdf4 = st.lognorm.cdf(x4, loc = params4[-2], scale = params4[-1], *arg4)
+    ax.plot(x4, 1-cdf4, color = col, label = lab, lw = 4)
+    print(1-cdf4[idx])
+
+    ax.axhline(1-cdf4[idx], xmin = 0, xmax = 0.4, color = col, ls = (0, (3,0.7)))
+
+
+fig, ax = plt.subplots(1,1, figsize = (7,12))
+ax.axvline(5, ymin = 0, ymax = 0.4, color = "red")
+plot(yg_fc1, cmap(0.9), r"$Q_1$")
+plot(yg_fc2, cmap(0.5),r"$Q_2$")
+plot(yg_fc3, cmap(0.3), r"$Q_3$")
+plot(yg_fc4, cmap(0.1), r"$Q_4$")
+ax.set_ylabel("P(Yards Gained) "+r"$>\;x$", fontsize = 15)
+ax.set_xlabel("Yards (x)", fontsize = 15)
+ax.legend()
+
+
+ax.set_xlim(-5, 20)
+ax.set_box_aspect(0.5)
+ax.legend(fontsize = 13)
+ax.tick_params(axis='both', which='major', labelsize=13)
+
+#%%INDIVIDUAL PDF
+
+fig, ax = plt.subplots(1,1, figsize = (7,12))
+yards = np.linspace(min(yg_fc4), max(yg_fc4), 1000)
+params4 = st.lognorm.fit(yg_fc4)
+arg4 = params4[:-2]
+pdf = st.lognorm.pdf(yards, loc = params4[-2], scale = params4[-1], *arg4)
+cdf = st.lognorm.cdf(yards, loc = params4[-2], scale = params4[-1], *arg4)
+ev = sum(yg_fc2)/len(yg_fc2)
+c = np.polyfit(yards, pdf, deg = 6)
+
+col1 = "red"
+col2 = "moccasin"
+y2g = 13
+count = 0 
+for yard in yards:
+    if yard < y2g:
+        count += 1
+        continue
+    else:
+        idx = count
+        break
+ax.axvline(0, color = "grey", label = "LOS", lw = 1, ls = "--")
+first_downs = pdf[idx:]
+yards_first_down = yards[idx:]
+prob = str((1 - cdf[idx]) * 100)[:5]
+for h in range(len(first_downs)):
+    p = first_downs[h]
+    q = yards_first_down[h]
+    ax.plot([q,q], [0,p], color = col2, lw = 3)
+
+ax.axvline(ev, color = col1, lw = 2)
+ax.axvline(y2g, color = "blue", lw = 1, label = "Yards for First Down")
+ax.plot(yards, pdf, color = "k", label = "PDF", lw = 3.5)
+ax.set_xlabel('Yards ('+r"$x$"+")", fontsize = 15)
+ax.set_ylabel(r"$P\,$"+'(Yards Gained = '+r'$x$'+")", fontsize = 15)
+ax.set_ylim(0, 0.1)
+ax.set_xlim(-7, 30)
+ax.annotate("Expected Yards Gained = "+(str(ev)[:5]), xy=(ev-0.2, 0.05), xytext=(ev+5, 0.055),
+            arrowprops=dict(arrowstyle="->"), color="k", fontsize = 13)
+ax.annotate("First Down Probability  = "+prob+"%", xy=(15, 0.003), xytext=(11, 0.03),
+            arrowprops=dict(arrowstyle="->"), color="k", fontsize = 13)
+ax.legend(fontsize = 13)
+ax.set_box_aspect(0.5)
+ax.tick_params(axis='both', which='major', labelsize=13)
