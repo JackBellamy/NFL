@@ -6,4 +6,5 @@
 
 ![image](https://user-images.githubusercontent.com/79582928/236174201-1936fdaa-4b66-482a-9ff7-569986196184.png)
 
-![image](https://user-images.githubusercontent.com/79582928/236173991-27538f63-6132-4e4c-b766-eecbb12ec474.png)
+https://github.com/JackBellamy/NFL/assets/79582928/253787f0-1751-450c-9084-a4015d34e135
+
